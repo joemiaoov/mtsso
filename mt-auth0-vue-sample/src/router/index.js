@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import HomeView from '../views/HomeView.vue';
 import ProfileView from '../views/ProfileView.vue';
-import TenantConfigTreeView from '../views/TenantConfigTreeView.vue';
 import TenantConfigListView from '../views/TenantConfigListView.vue';
 import NotFoundView from '../views/NotFoundView.vue';
 
@@ -12,12 +11,6 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView,
-    },
-    {
-      path: '/tenant-config-tree',
-      name: 'tenant-config-tree',
-      component: TenantConfigTreeView,
-      meta: { requiresAuth: true },
     },
     {
       path: '/tenant-config-list',

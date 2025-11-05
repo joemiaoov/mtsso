@@ -1,10 +1,10 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useAuth0 } from '@auth0/auth0-vue';
 import { useRuntimeConfig } from '../composables/useRuntimeConfig';
 import ProtectedApiDemo from '../components/ProtectedApiDemo.vue';
 
-const { isAuthenticated } = useAuth0();
+const { isAuthenticated, isLoading, loginWithRedirect } = useAuth0();
 const runtimeConfig = useRuntimeConfig();
 
 const configSummary = computed(() => ({
@@ -12,6 +12,33 @@ const configSummary = computed(() => ({
   clientId: runtimeConfig.clientId,
   audience: runtimeConfig.audience,
 }));
+
+const autoLoginTriggered = ref(false);
+
+watch(
+  [isLoading, isAuthenticated],
+  ([loading, authenticated]) => {
+    if (!loading && !authenticated && !autoLoginTriggered.value) {
+      autoLoginTriggered.value = true;
+
+      const loginOptions = {
+        appState: {
+          returnTo: window.location.pathname,
+          tenantConfig: configSummary.value,
+        },
+      };
+
+      if (runtimeConfig.audience) {
+        loginOptions.authorizationParams = {
+          audience: runtimeConfig.audience,
+        };
+      }
+
+      void loginWithRedirect(loginOptions);
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <template>

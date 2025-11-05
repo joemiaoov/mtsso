@@ -30,7 +30,6 @@ function handleLogout() {
 
     <nav class="nav-links">
       <RouterLink to="/" class="nav-link">Home</RouterLink>
-      <RouterLink v-if="isAuthenticated" to="/tenant-config-tree" class="nav-link">Tenant Config Tree</RouterLink>
       <RouterLink v-if="isAuthenticated" to="/tenant-config-list" class="nav-link">Tenant Config List</RouterLink>
       <RouterLink v-if="isAuthenticated" to="/profile" class="nav-link">Profile</RouterLink>
     </nav>
