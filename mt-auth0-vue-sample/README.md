@@ -1,49 +1,49 @@
-# Auth0 Runtime Config Vue Sample
+ï»¿# Auth0 Runtime Config Vue Sample
 
-This Vue 3 + Vite single-page app demonstrates how to fetch Auth0 settings **at runtime** from the Tsunami Config Service and only then initialise `@auth0/auth0-vue`. No static JSON configuration is bundled with the client.
+This Vue 3 + Vite single-page app fetches its Auth0 tenant settings from the Tsunami Config Service at runtime and only initialises `@auth0/auth0-vue` after those values are available. No Auth0 configuration is bundled into the client.
 
-- Runtime fetch from `https://tsunami-configservice-dev.azurewebsites.net/api/public/tenants` using the tenant domain.
-- Auth0 plugin bootstrapped after the configuration call resolves.
-- Public Home page and protected Profile page (route guard).
-- Example of calling a protected API with an access token obtained via `getAccessTokenSilently`.
+## Highlights
+- Resolve the tenant domain from `?tenantDomain=`, `VITE_TENANT_DOMAIN`, or the current hostname before contacting the Config Service.
+- Request tenant metadata from `https://tsunami-configservice-dev.azurewebsites.net/api/public/tenants?domain={tenantDomain}` and provide it to every component via Vue's dependency injection.
+- Bootstrap `@auth0/auth0-vue` with the runtime configuration, using local storage caching and refresh tokens.
+- Redirect unauthenticated users to Auth0 on first load and show a navigation shell once the session is established.
+- Call protected Config Service endpoints with the runtime `tenantId`, bearer token, and `X-TENANT-ID` header to display both list and tree representations of the tenant configuration.
 
 ## Getting Started
-
 ```bash
 npm install
 npm run dev
 ```
+The current Vite toolchain requires Node `^20.19.0` or `>=22.12.0`. Older Node 20 builds emit `EBADENGINE` warnings but the app still runs.
 
-> ?? The current Vite toolchain requires Node `^20.19.0` or `>=22.12.0`. Running on an older Node 20 build produces warnings (`EBADENGINE`) but the sample still works.
+When the dev server is running:
+1. Use a tenant-aware host such as `http://tsunami.localhost:5173/` (add a hosts entry that points to `127.0.0.1`).
+2. Alternatively, open `http://localhost:5173/?tenantDomain=tsunami.localhost` or set `VITE_TENANT_DOMAIN=tsunami.localhost npm run dev`.
+3. Sign in with an Auth0 user for the selected tenant and explore the protected pages.
 
-Open http://localhost:5173/ once Vite starts.
+## Runtime Configuration Flow
+1. `src/main.js` resolves the tenant domain and calls `fetchAuth0Config()` from `src/services/configService.js`.
+2. The Config Service responds with `tenantId`, Auth0 domain, client ID, audience, and metadata specific to the tenant.
+3. Vue provides the runtime config via `runtimeConfigKey` and mounts the app only after the fetch succeeds.
+4. `createAuth0()` installs the Auth0 plugin using the fetched domain and client ID, enabling refresh tokens and the configured audience.
+5. `createAuthGuard()` enforces `route.meta.requiresAuth` on the protected routes.
 
-## Configuration Flow
+## Protected Tenant Actions
+- `src/components/ProtectedApiDemo.vue` shows the current access token and calls the protected tree endpoint (`/tenants/{tenantId}/orgs/0/properties/tree`). The results are rendered on the home page under "Tenant Config Tree".
+- `src/views/TenantConfigListView.vue` uses the same access token to call the list endpoint (`/tenants/{tenantId}/orgs/0/properties`) once you select the "Tenant Config List" link in the navigation.
+- `src/views/ProfileView.vue` displays the authenticated user's profile data provided by Auth0.
 
-1. `src/main.js` calls `fetchAuth0Config()` (see `src/services/configService.js`).
-2. The Config Service endpoint resolves the tenant domain into Auth0 metadata (domain, clientId, etc.).
-3. After the fetch succeeds, Vue creates the app, provides the runtime config, and installs the Auth0 plugin.
-4. The `createAuthGuard` helper wires route protection based on `route.meta.requiresAuth`.
+Both protected fetches include the `X-TENANT-ID` header and expect the runtime `tenantId`. An ID of `0` (returned for the `tsunami.localhost` tenant) is valid and handled correctly.
 
-By default the tenant domain is `demo-dev.gsvlabsportal.com`. Override it by either:
+## Customising the Tenant Domain
+The tenant domain can be supplied in three ways, checked in this order:
+1. Pass a value to `fetchAuth0Config({ tenantDomain })`.
+2. Set a Vite env variable before starting the dev server: `VITE_TENANT_DOMAIN=my-tenant.example.com npm run dev`.
+3. Append `?tenantDomain=my-tenant.example.com` to the dev server URL.
 
-- Adding `?tenantDomain=<custom-domain>` to the local dev URL.
-- Setting a Vite env variable before starting Vite: `VITE_TENANT_DOMAIN=my-tenant.example.com npm run dev`.
-
-## Calling a Protected API
-
-`src/components/ProtectedApiDemo.vue` shows how to request an access token with the runtime-configured audience and call `${audience}/api/messages` via Axios. Update the audience or endpoint if your API lives elsewhere.
-
-## Key Files
-
-- `src/main.js` — Bootstraps Vue after runtime config resolves and installs Auth0.
-- `src/services/configService.js` — Fetches tenant-specific Auth0 settings.
-- `src/router/index.js` — Defines public/protected routes.
-- `src/views/HomeView.vue` — Explains the runtime config flow and hosts the API demo.
-- `src/views/ProfileView.vue` — Protected user profile view.
+If no explicit domain is provided, the app falls back to the current hostname.
 
 ## Next Steps
-
-- Replace the sample API call with your actual backend endpoint.
-- Extend the runtime config payload if you need additional Auth0 parameters (e.g., `organization`, `scope`).
-- Deploy the built assets (`npm run build`) behind your preferred hosting stack.
+- Replace the Config Service base URL or endpoints with your own environment.
+- Extend the runtime configuration payload if you need additional Auth0 parameters (for example, `organization` or different scopes).
+- Run `npm run build` and deploy the generated assets behind your preferred hosting stack.

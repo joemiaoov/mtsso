@@ -23,7 +23,7 @@ async function fetchTenantConfig(token) {
   try {
     const tenantId = runtimeConfig.tenantId;
 
-    if (!tenantId) {
+    if (tenantId === undefined || tenantId === null || tenantId === '') {
       throw new Error('Tenant ID is not available in the runtime configuration.');
     }
 
